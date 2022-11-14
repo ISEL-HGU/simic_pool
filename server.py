@@ -2,15 +2,32 @@ import socket
 import threading
 import sys
 import pickle
+import subprocess
+import os
 import detreefy as dt
 
 suggestions = []
-def suggestion_builder(static, change_vector):
+def detreefy_builder(static, change_vector):
     suggestions, match_num = dt.detreefy(static, change_vector)
     if suggestions is None:
+        # TO DO: heuristics for finding similar change vectors
+        # child -> sibling -> parent
         sys.exit()
-    
-    
+    else:
+        for i in range(0, match_num):
+            suggestion = suggestions[i]
+            print(':::debug::: suggestion: \n', suggestion)
+            builder = threading.Thread(target=suggestions_builder, args=(suggestion[0], suggestion[2], suggestion[3], suggestion[4]))
+            builder.start()
+            
+def suggestions_builder(proj, pc, file, line):
+    process = subprocess.Popen(['make', 'pp_run','proj='+proj, 'pc='+pc, 'file='+file, 'line='+line], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    code = ''
+    for line in process.stdout:
+        code = code + str(line).replace('b\'','').replace('\\n\'','') + '\n'
+    print(threading.currentThread.__name__+'\n'+code)
+    sys.exit()
+
 def processMessages(conn, addr, static):
     while True:
         try:
@@ -20,7 +37,7 @@ def processMessages(conn, addr, static):
             change_vector = data.decode('utf-8')
             print(change_vector)
             conn.sendall(bytes('Thank you for connecting', 'utf-8'))
-            detreefier = threading.Thread(target=suggestion_builder, args=(static, str(change_vector)))
+            detreefier = threading.Thread(target=detreefy_builder, args=(static, str(change_vector)))
             detreefier.start()
         except:
             conn.close()

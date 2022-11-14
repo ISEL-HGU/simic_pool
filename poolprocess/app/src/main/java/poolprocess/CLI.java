@@ -43,7 +43,6 @@ public class CLI {
                 .build());
 
         options.addOption(Option.builder("cpc")
-                .required()
                 .desc("")
                 .hasArg()
                 .argName("Change-Prone-Commit hashcode")

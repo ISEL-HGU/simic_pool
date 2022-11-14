@@ -40,5 +40,5 @@ def detreefy(static:any, edit_script: str):
         print(str(len(node.repo)) + ' exact matches found' + '\n')
         for i in range (0,len(node.repo)):
             print(node.repo[i] + '\t' + node.cpc[i] + '\t' + node.pc[i] + '\t' + node.file_path[i] + '\t' + node.blamed_line[i] + '\n')
-            matches.append((node.repo[i], node.cpc[i], node.pc[i], node.file_path[i], node.blamed_line[i]))
+            matches.append([node.repo[i], node.cpc[i], node.pc[i], node.file_path[i], node.blamed_line[i]])
         return matches, len(node.repo)
