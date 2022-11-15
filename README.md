@@ -1,23 +1,28 @@
 # simic_pool
-pool process for simic extension
+## pool process for simic extension
+
+This program is a server process that communicates with the jupyterlab extension Simic via TCP.
 
 Run this program separately from jupyter lab
 
-First run the following shell file to clone the repositories.
+### Before running, please follow the below steps.
 
-`zsh clone.sh`
+1. run the following shell file to clone the repositories.
 
-or
+  `zsh clone.sh`
 
-`bash clone.sh`
+  or
 
-Then, download the pool.tree file from the following link.
+  `bash clone.sh` depending on your shell
+
+2. download the pool.tree and d2v.model files from the following links.
 
 https://drive.google.com/file/d/1lXitokvyUhdd0BObXdij7n_Idu5OJ5n1/view?usp=share_link
 
-depending on your shell
+https://drive.google.com/file/d/1I_1hhyF5jnN7RQdBzemB0BOw_ywK2Hpq/view?usp=share_link
 
-Then, run
+
+3. run
 
 `make build`
 
