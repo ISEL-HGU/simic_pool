@@ -19,7 +19,11 @@ Run this program separately from jupyter lab
 
 https://drive.google.com/file/d/1lXitokvyUhdd0BObXdij7n_Idu5OJ5n1/view?usp=share_link
 
+place this file at the project root
+
 https://drive.google.com/file/d/1I_1hhyF5jnN7RQdBzemB0BOw_ywK2Hpq/view?usp=share_link
+
+place this file at simic/train/
 
 
 3. run
