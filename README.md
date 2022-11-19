@@ -23,7 +23,7 @@ place this file at the project root
 
 https://drive.google.com/file/d/1I_1hhyF5jnN7RQdBzemB0BOw_ywK2Hpq/view?usp=share_link
 
-place this file at simic/train/
+place this file at simic_pool/train/
 
 
 3. run
