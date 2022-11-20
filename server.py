@@ -8,6 +8,8 @@ import detreefy as dt
 from gensim.models.doc2vec import Doc2Vec
 from scipy import spatial
 from nltk.tokenize import word_tokenize
+import nltk
+nltk.download('punkt')
 
 suggestions = []
 similarity_candidate = []
@@ -93,6 +95,7 @@ def processMessages(conn, addr, static):
     while True:
         try:
             data = conn.recv(5000)
+            print(data)
             if not data: 
                 conn.close()
             data = data.decode('utf-8')
@@ -137,7 +140,7 @@ host = sys.argv[1]
 port = sys.argv[2]
 #64555                             # Reserve a port for your service.
 s = socket.socket()
-s.bind((host, port))                     # Bind to the port
+s.bind((host, int(port)))                     # Bind to the port
 
 s.listen(5)                              # Now wait for client connection.
 

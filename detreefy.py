@@ -22,7 +22,7 @@ def traverse_tree_recur(root,parsed_script):
                     return node
                 return traverse_tree_recur(node,parsed_script)
             
-        return None
+        return None, None
 
 def detreefy(static:any, edit_script: str):
      #When API rquest comes
@@ -35,7 +35,7 @@ def detreefy(static:any, edit_script: str):
     matches = []
     if node is None or len(node.repo) == 0:
         print('exact match not found!')
-        return None
+        return None, None
     else:
         print(str(len(node.repo)) + ' exact matches found' + '\n')
         for i in range (0,len(node.repo)):
