@@ -24,7 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Git {
-    private final String workPath = "/data/CGYW/clones/";
+    private final String workPath = System.getProperty("user.dir") + "/clones";
     private DiffAlgorithm diffAlgorithm = DiffAlgorithm.getAlgorithm(DiffAlgorithm.SupportedAlgorithm.MYERS);
     private RawTextComparator diffComparator = RawTextComparator.WS_IGNORE_ALL;
     private org.eclipse.jgit.api.Git git;
