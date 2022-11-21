@@ -22,7 +22,7 @@ def traverse_tree_recur(root,parsed_script):
                     return node
                 return traverse_tree_recur(node,parsed_script)
             
-        return None, None
+        return None
 
 def detreefy(static:any, edit_script: str):
      #When API rquest comes
