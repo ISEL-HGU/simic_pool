@@ -49,16 +49,18 @@ def detreefy_builder(static:dt, change_vector:str, snap:str):
             match_cnt = i
             builder.append(threading.Thread(target=suggestions_builder, args=(suggestion[0], suggestion[2], suggestion[3], suggestion[4])))
             print(idx, len(builder))
+            
             builder[idx].start()
             idx = idx + 1
-            if (i+1) % 30 == 0 or i == match_num - 1:
+            if (i+1) % 30 == 0 or idx == match_num - 1:
                 for j in range(0, idx):
                     builder[j].join()
                 idx = 0
                 builder = []
-                if len(similarity_candidate) >= 10:
+                if len(similarity_candidate) >= 10 or i == match_num - 1:
                     sim = [cos_sim(s, snap_vec) for s in similarity_candidate]
                     val, index = min((val, index) for (index, val) in enumerate(sim))
+                    print('---------check--------------')
                     suggestions.append(similarity_candidate[index])
                     print(len(suggestions),'\n',similarity_candidate[index])
                     similarity_candidate = []
@@ -95,23 +97,25 @@ def suggestions_builder(proj:str, pc:str, file:str, line:str):
     global similarity_candidate
     process = subprocess.Popen(['make', 'pp_run','proj='+proj, 'pc='+pc, 'file='+file, 'line='+line], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     code = ''
+    
     for line in process.stdout:
         if str(line).startswith('b\''):
             line = str(line).replace('b\'','').replace('b\"','').replace('\\n\'','') + '\n'
         elif str(line).startswith('b\"'):
             line = str(line).replace('b\"','').replace('\\n\"','') + '\n'
-
         if line.startswith('SLF4J:'):
             continue
-        elif line.startswith('null'): 
-            similarity_candidate = []
+        elif 'error: unable to get target hunk' in line: 
+            # similarity_candidate = []
             sys.exit()
         code = code + line
+    
     similarity_candidate.append(code)
+    print('suggestions_builder: ', len(similarity_candidate))
         
     sys.exit()
 
-def processMessages(conn, addr, static):
+def processMessages(conn, addr, static:dt):
     global match_cnt
     while True:
         try:
