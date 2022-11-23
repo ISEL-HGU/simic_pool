@@ -30,10 +30,10 @@ public class Git {
     private org.eclipse.jgit.api.Git git;
     public String collect(String[] pairInfo) {
         String repoName = pairInfo[0];
-        String cpc = pairInfo[1];
-        String pc = pairInfo[2];
-        String filePath = pairInfo[3];
-        String line = pairInfo[4];
+        // String cpc = pairInfo[1];
+        String pc = pairInfo[1];
+        String filePath = pairInfo[2];
+        String line = pairInfo[3];
 
         Repository repository = getRepo(repoName);
 

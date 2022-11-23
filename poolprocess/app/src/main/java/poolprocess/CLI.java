@@ -18,12 +18,14 @@ public class CLI {
             CommandLine cmd = parser.parse(options, args);
 
             String Project = cmd.getOptionValue("proj");
-            String CPC = cmd.getOptionValue("cpc");
+            // String CPC = cmd.getOptionValue("cpc");
             String PC = cmd.getOptionValue("pc");
             String filePath = cmd.getOptionValue("file");
-            String line = cmd.getOptionValue("line").replace("\"\"", "");
-//            if (line.endsWith("]]")) line = line.substring(0, line.length()-3);
-            diffInfo = new String[]{Project, CPC, PC, filePath, line};
+            String line = cmd.getOptionValue("line");
+            if (line.endsWith("]]")) line = line.substring(0, line.length()-3);
+            line = line.replace("ㅗ", "\"");
+            line = line.replace("\"\"", "\"");
+            diffInfo = new String[]{Project, PC, filePath, line};
 
         } catch (Exception e) {
             e.printStackTrace();

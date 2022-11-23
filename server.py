@@ -8,6 +8,7 @@ import detreefy as dt
 from gensim.models.doc2vec import Doc2Vec
 from scipy import spatial
 from nltk.tokenize import word_tokenize
+import time
 import nltk
 print(' ___  ____  __  __  ____  ___    ____  _____  _____  __   \n' +
         '/ __)(_  _)(  \/  )(_  _)/ __)  (  _ \(  _  )(  _  )(  )  \n' +
@@ -20,7 +21,7 @@ suggestions = []
 similarity_candidate = []
 match_num = 0
 match_cnt = 0
-mutex = 0
+mutex = 0 # if no process is running -> 0/ if process is already running -> 1/ if new process has to start -> -1
 
 '''
 This function creates threads for each exact matches in the pool.
@@ -31,6 +32,14 @@ def detreefy_builder(static:dt, change_vector:str, snap:str):
     global suggestions
     global match_num
     global match_cnt
+    global mutex
+    # if mutex == 1:
+    #     mutex = 2
+    #     while mutex == 2:
+    #         time.sleep(3)
+    #     mutex = 1
+    # elif mutex == 0:
+    #     mutex = 1
     sugg, match_num = dt.detreefy(static, change_vector)
     match_cnt = 0
     snap_vec = d2v_model.infer_vector(tokenize(snap))
@@ -39,34 +48,55 @@ def detreefy_builder(static:dt, change_vector:str, snap:str):
         # child -> sibling -> parent
         print('There is no exact match in the pool')
         match_cnt = -1
+        mutex = 0
         sys.exit()
     else:
         idx:int = 0
         builder = []
-        print(str(match_num) + ' exact matches found' + '\n')
+        print(str(match_num) + ' exact matches for the given change vector found' + '\n')
         for i in range(0, match_num):
             suggestion = sugg[i]
+            if len(suggestion[4]) > 300:
+                continue
             match_cnt = i
             builder.append(threading.Thread(target=suggestions_builder, args=(suggestion[0], suggestion[2], suggestion[3], suggestion[4])))
-            print(idx, len(builder))
-            
+            # print(idx, len(builder))
             builder[idx].start()
             idx = idx + 1
-            if (i+1) % 30 == 0 or idx == match_num - 1:
+            
+            if (i+1) % 30 == 0 or i == match_num - 1:
+                print(f'Looking at {i+1}th match.....')
                 for j in range(0, idx):
                     builder[j].join()
+                print(f'Collected {len(similarity_candidate)} candidates.....')
                 idx = 0
                 builder = []
+                # print(i, match_num, len(similarity_candidate))
                 if len(similarity_candidate) >= 10 or i == match_num - 1:
+                    print(f'Calculating imilarity for {len(similarity_candidate)} candidates.....')
                     sim = [cos_sim(s, snap_vec) for s in similarity_candidate]
                     val, index = min((val, index) for (index, val) in enumerate(sim))
-                    print('---------check--------------')
+                    print(f'The most similar change we found out of {len(similarity_candidate)} candidates is \n\n {similarity_candidate[index]}')
                     suggestions.append(similarity_candidate[index])
-                    print(len(suggestions),'\n',similarity_candidate[index])
+                    # print(len(suggestions),'\n',similarity_candidate[index])
                     similarity_candidate = []
+                    print('Clearing candidates and continuing to search for more exact candidates from the rest of exact matches')
+            # mutex_handler()
     match_cnt = -1
+    mutex = 0
+    print('match finding finished')
         
-                        
+def mutex_handler ():
+    global mutex
+    global suggestions
+    global similarity_candidate
+    if mutex == 2:
+        time.sleep(3)
+        suggestions = []
+        similarity_candidate = []
+        mutex = 1
+        print('Starting a new process')
+        sys.exit()                    
                     
             
 def cos_sim(diff:str,snap_vec):
@@ -93,9 +123,14 @@ def tokenize (code:str):
     flat = [item for l in non_flat for item in l if item != '']
     return flat
             
-def suggestions_builder(proj:str, pc:str, file:str, line:str):
+def suggestions_builder(proj:str, pc:str, file:str, blame_line:str):
     global similarity_candidate
-    process = subprocess.Popen(['make', 'pp_run','proj='+proj, 'pc='+pc, 'file='+file, 'line='+line], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    if len(blame_line) > 500:
+        sys.exit()
+    if blame_line[-1] == '\n':
+        blame_line = blame_line[:-1]
+    blame_line = blame_line.replace('"', 'ㅗ') # unsued delimeter since double quotation confuses the parser
+    process = subprocess.Popen(['make', 'pp_run','proj='+proj, 'pc='+pc, 'file='+file, 'line='+"\""+blame_line+"\""], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     code = ''
     
     for line in process.stdout:
@@ -103,24 +138,29 @@ def suggestions_builder(proj:str, pc:str, file:str, line:str):
             line = str(line).replace('b\'','').replace('b\"','').replace('\\n\'','') + '\n'
         elif str(line).startswith('b\"'):
             line = str(line).replace('b\"','').replace('\\n\"','') + '\n'
+        
         if line.startswith('SLF4J:'):
             continue
-        elif 'error: unable to get target hunk' in line: 
-            # similarity_candidate = []
+        elif 'error: unable to get target hunk' in line or '[pp_run]' in line or 'git: changes are all deleted null' in line or '.ipynb' in line or 'error: unable to get target hunk' in line:
+        #     # similarity_candidate = []
+            # print(line)
             sys.exit()
         code = code + line
-    
+    # print(proj +'\t'+ pc+'\t'+ file +'\t'+ blame_line, code)
+    # print(code)
+        
     similarity_candidate.append(code)
-    print('suggestions_builder: ', len(similarity_candidate))
+    # print('suggestions_builder: ', len(similarity_candidate))
         
     sys.exit()
 
 def processMessages(conn, addr, static:dt):
     global match_cnt
+    global mutex
     while True:
         try:
             data = conn.recv(5000)
-            print(data)
+            # print(data)
             if not data: 
                 conn.close()
             data = data.decode('utf-8')
@@ -129,7 +169,7 @@ def processMessages(conn, addr, static:dt):
                     if len(similarity_candidate) == 0:
                         conn.sendall(bytes('We do not have enough snapshots\nPlease try taking more snapshots...','utf-8'))
                     elif match_cnt == -1:
-                        conn.sendall(bytes('We could not find any relavant changes..\n Try with other snapshots...','utf-8'))
+                        conn.sendall(bytes('We could not find more relavant changes..\n Try with other snapshots...','utf-8'))
                     else:
                         conn.sendall(bytes(f'We are looking for semantically relavant change...\n We are processing {match_cnt}th file out of {match_num}matches\nTry in a bit.','utf-8'))
                 else:
@@ -190,3 +230,4 @@ with open('./pool.tree','rb') as file:          # load the pool
         if __name__ == '__main__':
             print('\n\nReady for service!')
             main()
+
