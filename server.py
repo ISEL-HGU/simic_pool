@@ -21,7 +21,9 @@ suggestions = []
 similarity_candidate = []
 match_num = 0
 match_cnt = 0
-mutex = 0 # if no process is running -> 0/ if process is already running -> 1/ if new process has to start -> -1
+mutex = 0 # if no process is running -> 0/ if process is already running -> 1/ if new process has to start -> 2
+dirty_bit = 0 # if process was canceled or overridden by new post request becomes 1
+lock = threading.Lock()
 
 '''
 This function creates threads for each exact matches in the pool.
@@ -33,13 +35,9 @@ def detreefy_builder(static:dt, change_vector:str, snap:str):
     global match_num
     global match_cnt
     global mutex
-    # if mutex == 1:
-    #     mutex = 2
-    #     while mutex == 2:
-    #         time.sleep(3)
-    #     mutex = 1
-    # elif mutex == 0:
-    #     mutex = 1
+    global lock
+    
+
     sugg, match_num = dt.detreefy(static, change_vector)
     match_cnt = 0
     snap_vec = d2v_model.infer_vector(tokenize(snap))
@@ -64,10 +62,17 @@ def detreefy_builder(static:dt, change_vector:str, snap:str):
             builder[idx].start()
             idx = idx + 1
             
-            if (i+1) % 30 == 0 or i == match_num - 1:
+            if (i+1) % 10 == 0 or i == match_num - 1:
                 print(f'Looking at {i+1}th match.....')
                 for j in range(0, idx):
                     builder[j].join()
+                if mutex == 2:
+                    mutex = 1
+                    print('\nexiting the current detreefication threads')
+                    similarity_candidate = []
+                    suggestions = []
+                    lock.release()
+                    sys.exit()
                 print(f'Collected {len(similarity_candidate)} candidates.....')
                 idx = 0
                 builder = []
@@ -85,6 +90,7 @@ def detreefy_builder(static:dt, change_vector:str, snap:str):
     match_cnt = -1
     mutex = 0
     print('match finding finished')
+    lock.release()
         
 def mutex_handler ():
     global mutex
@@ -157,6 +163,8 @@ def suggestions_builder(proj:str, pc:str, file:str, blame_line:str):
 def processMessages(conn, addr, static:dt):
     global match_cnt
     global mutex
+    global dirty_bit
+    global lock
     while True:
         try:
             data = conn.recv(5000)
@@ -165,13 +173,16 @@ def processMessages(conn, addr, static:dt):
                 conn.close()
             data = data.decode('utf-8')
             if data == 'GET':
-                if len(suggestions) == 0:
+                if len(suggestions) == 0 and dirty_bit == 0:
                     if len(similarity_candidate) == 0:
                         conn.sendall(bytes('We do not have enough snapshots\nPlease try taking more snapshots...','utf-8'))
                     elif match_cnt == -1:
                         conn.sendall(bytes('We could not find more relavant changes..\n Try with other snapshots...','utf-8'))
                     else:
                         conn.sendall(bytes(f'We are looking for semantically relavant change...\n We are processing {match_cnt}th file out of {match_num}matches\nTry in a bit.','utf-8'))
+                elif dirty_bit == 1:
+                    conn.sendall(bytes('Requst being processed.\n Looking for new suggestions for your latest snapshot....','utf-8'))
+                    dirty_bit = 0
                 else:
                     conn.sendall(bytes(suggestions[0], 'utf-8'))
                     suggestions.pop(0)
@@ -179,6 +190,13 @@ def processMessages(conn, addr, static:dt):
                 tmp = data.split('!@#$%')
                 change_vector = tmp[0]
                 snap = tmp[1]
+                if mutex == 1:
+                    mutex = 2
+                    print('New request detected, waiting for the previous process to exit')
+                    print('overriding new request...')
+                elif mutex == 0:
+                    mutex = 1
+                lock.acquire()
                 print(f'Recieved Change Vector: {change_vector}')
                 conn.sendall(bytes('Thank you for connecting', 'utf-8'))
                 detreefier = threading.Thread(target=detreefy_builder, args=(static, str(change_vector),snap))
