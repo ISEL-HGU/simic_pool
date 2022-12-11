@@ -17,7 +17,7 @@ Run this program separately from jupyter lab
 
 2. download the pool.tree and d2v.model files from the following links.
 
-https://drive.google.com/file/d/1lXitokvyUhdd0BObXdij7n_Idu5OJ5n1/view?usp=share_link
+https://drive.google.com/file/d/1hx7QlTOi93N1_a6Jo6wb5LaeP3f6kGQC/view?usp=sharing
 
 place this file at the project root
 
