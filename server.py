@@ -45,6 +45,7 @@ def detreefy_builder(static:dt, change_vector:str, snap:str):
         # TO DO: heuristics for finding similar change vectors
         # child -> sibling -> parent
         print('There is no exact match in the pool')
+        lock.release()
         match_cnt = -1
         mutex = 0
         sys.exit()
