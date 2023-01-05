@@ -25,6 +25,9 @@ def traverse_tree_recur(root,parsed_script):
         return None
 
 def detreefy(static:any, edit_script: str):
+    temp = []
+    temp.append(edit_script)
+    print(temp)
      #When API rquest comes
     parsed_script = edit_script.split('|')
     if '' in parsed_script:

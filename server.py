@@ -11,9 +11,9 @@ from nltk.tokenize import word_tokenize
 import time
 import nltk
 print(' ___  ____  __  __  ____  ___    ____  _____  _____  __   \n' +
-        '/ __)(_  _)(  \/  )(_  _)/ __)  (  _ \(  _  )(  _  )(  )  \n' +
-    '\__ \ _)(_  )    (  _)(_( (__    )___/ )(_)(  )(_)(  )(__ \n' +
-    '(___/(____)(_/\/\_)(____)\___)  (__)  (_____)(_____)(____)\n')
+      '/ __)(_  _)(  \/  )(_  _)/ __)  (  _ \(  _  )(  _  )(  )  \n' +
+      '\__ \ _)(_  )    (  _)(_( (__    )___/ )(_)(  )(_)(  )(__ \n' +
+      '(___/(____)(_/\/\_)(____)\___)  (__)  (_____)(_____)(____)\n')
 print("\nChecking for necessary packages....")
 nltk.download('punkt')
 
@@ -139,6 +139,7 @@ def suggestions_builder(proj:str, pc:str, file:str, blame_line:str):
     blame_line = blame_line.replace('"', 'ㅗ') # unsued delimeter since double quotation confuses the parser
     process = subprocess.Popen(['make', 'pp_run','proj='+proj, 'pc='+pc, 'file='+file, 'line='+"\""+blame_line+"\""], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     code = ''
+    print(pc)
     
     for line in process.stdout:
         if str(line).startswith('b\''):
